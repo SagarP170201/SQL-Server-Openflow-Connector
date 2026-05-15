@@ -5,7 +5,7 @@ Validates a 2-table POC where the customer keeps their historical load approach 
 ## Architecture
 
 ```
-SQL Server (Azure SQL / AWS RDS)
+SQL Server on EC2 (64 vCPU / 256 GB RAM / 6 TB DB)
     │ Change Tracking (CDC)
     ▼
 Openflow Runtime (SPCS)
@@ -16,18 +16,19 @@ Snowflake (OPENFLOW_SQLSERVER_POC.INCREMENTAL_POC)
 
 ## Quickstart
 
-1. **Source**: Create Azure SQL or AWS RDS instance → run `source-setup/azure-sql-setup.sql` or `source-setup/aws-rds-setup.sql`
+1. **Source**: Run `source-setup/aws-ec2-setup.sql` on your EC2 SQL Server
 2. **Destination**: Run `snowflake-setup/destination-setup.sql` in Snowflake
 3. **Keys**: Run `scripts/generate-keys.sh`
-4. **Connector**: Configure Openflow UI per `docs/connector-config.md`
-5. **Validate**: Run `validation/test-cdc.sql` on source, then `validation/verify-snowflake.sql` on Snowflake
+4. **Network**: Run `snowflake-setup/eai-network-rule.sql` (fill in your EC2 endpoint)
+5. **Connector**: Configure Openflow UI per `docs/connector-config.md`
+6. **Validate**: Run `validation/test-cdc.sql` on source, then `validation/verify-snowflake.sql` on Snowflake
 
 ## File Structure
 
 ```
 ├── source-setup/
-│   ├── azure-sql-setup.sql      # Azure SQL Database setup
-│   └── aws-rds-setup.sql        # AWS RDS SQL Server setup
+│   ├── aws-ec2-setup.sql        # EC2 SQL Server setup (primary)
+│   └── azure-sql-setup.sql      # Azure SQL Database setup (alternate)
 ├── snowflake-setup/
 │   ├── destination-setup.sql    # Database, schema, user, role, warehouse
 │   └── eai-network-rule.sql     # EAI for SPCS connectivity
@@ -43,18 +44,25 @@ Snowflake (OPENFLOW_SQLSERVER_POC.INCREMENTAL_POC)
     └── teardown.sql             # Drop all POC objects
 ```
 
+## Networking Checklist
+
+| # | Check | How |
+|---|-------|-----|
+| 1 | EC2 Security Group allows TCP 1433 inbound | AWS Console → EC2 → Security Groups |
+| 2 | EC2 has public IP or Elastic IP | AWS Console → EC2 → Instances |
+| 3 | Windows Firewall allows 1433 | `netsh advfirewall firewall show rule name=all` on EC2 |
+| 4 | SQL Server TCP/IP enabled on 1433 | SQL Server Configuration Manager |
+| 5 | EAI created in Snowflake | `SHOW EXTERNAL ACCESS INTEGRATIONS;` |
+| 6 | EAI attached to Openflow runtime | Openflow UI → Runtime → External Access |
+
+Ref: https://docs.snowflake.com/en/user-guide/data-integration/openflow/setup-openflow-spcs-sf-allow-list
+
 ## Confidence Rating
 
 | Component | Confidence | Notes |
 |-----------|-----------|-------|
 | Snowflake destination setup | **100%** | Validated — all objects created and grants verified |
 | SQL Server Change Tracking | **95%** | Standard CT setup, well-documented by Microsoft |
-| Openflow incremental mode | **90%** | Per Snowflake docs — `Ingestion Type = incremental` bypasses snapshot, uses `CREATE TABLE IF NOT EXISTS` |
-| EAI/Network connectivity | **85%** | Depends on firewall rules and DNS resolution from SPCS runtime |
-| **Overall E2E** | **90%** | Main risk is network connectivity between SPCS and your SQL Server |
-
-### Risk Mitigation
-
-- Test network connectivity before starting the connector (Openflow network test utility)
-- Ensure Change Tracking retention (2 days) exceeds any planned downtime
-- Keep `Ingestion Type = incremental` only during the POC cutover, then switch to `full`
+| Openflow incremental mode | **90%** | Per Snowflake docs — `Ingestion Type = incremental` bypasses snapshot |
+| EAI/Network connectivity | **85%** | Depends on EC2 security group + EAI config |
+| **Overall E2E** | **90%** | Main risk is network path from SPCS to EC2 |

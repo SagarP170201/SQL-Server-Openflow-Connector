@@ -1,17 +1,15 @@
 # Openflow Connector Configuration Reference
 
-## Openflow UI Parameter Values
-
-After installing the SQL Server connector on your runtime, right-click the process group → Parameters and fill in:
+## Source: EC2 SQL Server (64 vCPU / 256 GB RAM / 6 TB)
 
 ### SQLServer Source Parameters
 
-| Parameter | Azure SQL | AWS RDS |
-|-----------|-----------|---------|
-| SQLServer Connection URL | `jdbc:sqlserver://openflow-poc-<unique>.database.windows.net:1433;encrypt=true;databaseName=OpenflowPOC` | `jdbc:sqlserver://<rds-endpoint>:1433;databaseName=OpenflowPOC;encrypt=false` |
-| SQLServer JDBC Driver | Upload `mssql-jdbc-12.10.0.jre11.jar` (check "Reference asset") | Same |
-| SQLServer Username | `openflow_user` | `openflow_user` |
-| SQLServer Password | `OpenflowPass123!` | `OpenflowPass123!` |
+| Parameter | Value |
+|-----------|-------|
+| SQLServer Connection URL | `jdbc:sqlserver://<ec2-public-ip-or-dns>:1433;databaseName=<your_database>;encrypt=false` |
+| SQLServer JDBC Driver | Upload `mssql-jdbc-12.10.0.jre11.jar` (check "Reference asset") |
+| SQLServer Username | `openflow_user` |
+| SQLServer Password | `OpenflowPass123!` |
 
 ### SQLServer Destination Parameters
 
@@ -32,14 +30,14 @@ After installing the SQL Server connector on your runtime, right-click the proce
 | Parameter | Value |
 |-----------|-------|
 | Ingestion Type | `incremental` |
-| Included Table Names | `OpenflowPOC.dbo.orders, OpenflowPOC.dbo.customers` |
+| Included Table Names | `<your_database>.<schema>.<table_1>, <your_database>.<schema>.<table_2>` |
 | Merge Task Schedule CRON | `* * * * * ?` |
 
 ## Start the Connector
 
 1. Right-click canvas → **Enable all Controller Services**
 2. Right-click process group → **Start**
-3. Verify: all processors green (RUNNING), no bulletins with errors
+3. Verify: all processors green (RUNNING), no bulletin errors
 
 ## Post-POC
 

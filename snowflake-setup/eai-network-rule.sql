@@ -1,26 +1,14 @@
 -- =============================================================================
 -- SNOWFLAKE — EAI / Network Rule for SPCS Openflow Runtime
 -- Run as ACCOUNTADMIN
--- Replace <your-sql-server-endpoint> with actual host
+-- Replace <ec2-public-ip-or-dns> with your EC2 instance's public IP or DNS
 -- =============================================================================
 
--- For Azure SQL:
--- CREATE OR REPLACE NETWORK RULE OPENFLOW_SQLSERVER_POC.INCREMENTAL_POC.SQLSERVER_NETWORK_RULE
---   MODE = EGRESS
---   TYPE = HOST_PORT
---   VALUE_LIST = ('openflow-poc-<unique>.database.windows.net:1433');
-
--- For AWS RDS:
--- CREATE OR REPLACE NETWORK RULE OPENFLOW_SQLSERVER_POC.INCREMENTAL_POC.SQLSERVER_NETWORK_RULE
---   MODE = EGRESS
---   TYPE = HOST_PORT
---   VALUE_LIST = ('openflow-sqlserver-poc.<id>.<region>.rds.amazonaws.com:1433');
-
--- Uncomment and fill in whichever applies:
+-- For EC2-hosted SQL Server, use the public IP or Elastic IP:
 CREATE OR REPLACE NETWORK RULE OPENFLOW_SQLSERVER_POC.INCREMENTAL_POC.SQLSERVER_NETWORK_RULE
   MODE = EGRESS
   TYPE = HOST_PORT
-  VALUE_LIST = ('<your-sql-server-endpoint>:1433');
+  VALUE_LIST = ('<ec2-public-ip-or-dns>:1433');
 
 CREATE OR REPLACE EXTERNAL ACCESS INTEGRATION OPENFLOW_SQLSERVER_EAI
   ALLOWED_NETWORK_RULES = (OPENFLOW_SQLSERVER_POC.INCREMENTAL_POC.SQLSERVER_NETWORK_RULE)
