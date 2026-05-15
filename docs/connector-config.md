@@ -1,12 +1,14 @@
 # Openflow Connector Configuration Reference
 
-## Source: EC2 SQL Server (64 vCPU / 256 GB RAM / 6 TB)
+## Deployment: BYOC (runtime in customer VPC)
+
+The Openflow runtime runs in the same AWS VPC as the EC2 SQL Server. Uses KEY_PAIR authentication to write to Snowflake.
 
 ### SQLServer Source Parameters
 
 | Parameter | Value |
 |-----------|-------|
-| SQLServer Connection URL | `jdbc:sqlserver://<ec2-public-ip-or-dns>:1433;databaseName=<your_database>;encrypt=false` |
+| SQLServer Connection URL | `jdbc:sqlserver://<ec2-private-ip>:1433;databaseName=<your_database>;encrypt=false` |
 | SQLServer JDBC Driver | Upload `mssql-jdbc-12.10.0.jre11.jar` (check "Reference asset") |
 | SQLServer Username | `openflow_user` |
 | SQLServer Password | `OpenflowPass123!` |
@@ -17,12 +19,12 @@
 |-----------|-------|
 | Destination Database | `OPENFLOW_SQLSERVER_POC` |
 | Destination Schema Pattern | `INCREMENTAL_POC` |
-| Snowflake Authentication Strategy | `SNOWFLAKE_MANAGED_TOKEN` (SPCS) or `KEY_PAIR` (BYOC) |
-| Snowflake Account Identifier | Blank (SPCS) or `<org>-<account>` (BYOC) |
+| Snowflake Authentication Strategy | `KEY_PAIR` |
+| Snowflake Account Identifier | `<org>-<account>` |
 | Snowflake Object Identifier Resolution | `CASE_INSENSITIVE` |
-| Snowflake Private Key File | Upload `rsa_key.p8` (BYOC only) |
+| Snowflake Private Key File | Upload `rsa_key.p8` (check "Reference asset") |
 | Snowflake Role | `OPENFLOW_SQLSERVER_ROLE` |
-| Snowflake Username | Blank (SPCS) or `OPENFLOW_SQLSERVER_SVC` (BYOC) |
+| Snowflake Username | `OPENFLOW_SQLSERVER_SVC` |
 | Snowflake Warehouse | `OPENFLOW_SQLSERVER_WH` |
 
 ### SQLServer Ingestion Parameters

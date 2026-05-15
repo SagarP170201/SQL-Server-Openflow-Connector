@@ -7,19 +7,27 @@ Validates a 2-table POC where the customer keeps their historical load approach 
 ```
 SQL Server on EC2 (64 vCPU / 256 GB RAM / 6 TB DB)
     │ Change Tracking (CDC)
+    │ Private IP (no public exposure)
     ▼
-Openflow Runtime (SPCS)
+Openflow Runtime (BYOC — same VPC as EC2)
     │ Incremental mode (no snapshot)
+    │ KEY_PAIR auth to Snowflake
     ▼
 Snowflake (OPENFLOW_SQLSERVER_POC.INCREMENTAL_POC)
 ```
+
+## Why BYOC?
+
+The SQL Server is on EC2 with no public IP. BYOC deploys the Openflow runtime inside the same AWS VPC, enabling direct private connectivity to SQL Server on `<private-ip>:1433`. No EAI or network rules needed.
+
+Docs: https://docs.snowflake.com/en/user-guide/data-integration/openflow/setup-openflow-byoc
 
 ## Quickstart
 
 1. **Source**: Run `source-setup/aws-ec2-setup.sql` on your EC2 SQL Server
 2. **Destination**: Run `snowflake-setup/destination-setup.sql` in Snowflake
-3. **Keys**: Run `scripts/generate-keys.sh`
-4. **Network**: Run `snowflake-setup/eai-network-rule.sql` (fill in your EC2 endpoint)
+3. **Keys**: Run `scripts/generate-keys.sh`, then assign public key to the service user
+4. **BYOC Runtime**: Set up BYOC deployment in your AWS VPC (see docs above)
 5. **Connector**: Configure Openflow UI per `docs/connector-config.md`
 6. **Validate**: Run `validation/test-cdc.sql` on source, then `validation/verify-snowflake.sql` on Snowflake
 
@@ -30,8 +38,7 @@ Snowflake (OPENFLOW_SQLSERVER_POC.INCREMENTAL_POC)
 │   ├── aws-ec2-setup.sql        # EC2 SQL Server setup (primary)
 │   └── azure-sql-setup.sql      # Azure SQL Database setup (alternate)
 ├── snowflake-setup/
-│   ├── destination-setup.sql    # Database, schema, user, role, warehouse
-│   └── eai-network-rule.sql     # EAI for SPCS connectivity
+│   └── destination-setup.sql    # Database, schema, user, role, warehouse
 ├── scripts/
 │   ├── generate-keys.sh         # RSA key pair generation
 │   └── download-jdbc-driver.sh  # MSSQL JDBC driver download
@@ -44,18 +51,16 @@ Snowflake (OPENFLOW_SQLSERVER_POC.INCREMENTAL_POC)
     └── teardown.sql             # Drop all POC objects
 ```
 
-## Networking Checklist
+## Networking (BYOC)
+
+No EAI or network rules required. The BYOC runtime runs in the customer's VPC and connects directly to EC2 via private IP.
 
 | # | Check | How |
 |---|-------|-----|
-| 1 | EC2 Security Group allows TCP 1433 inbound | AWS Console → EC2 → Security Groups |
-| 2 | EC2 has public IP or Elastic IP | AWS Console → EC2 → Instances |
-| 3 | Windows Firewall allows 1433 | `netsh advfirewall firewall show rule name=all` on EC2 |
+| 1 | BYOC runtime deployed in same VPC (or peered VPC) | Openflow UI → Deployments |
+| 2 | Security group allows TCP 1433 from runtime subnet | AWS Console → EC2 → Security Groups |
+| 3 | Windows Firewall allows 1433 | SQL Server Configuration Manager on EC2 |
 | 4 | SQL Server TCP/IP enabled on 1433 | SQL Server Configuration Manager |
-| 5 | EAI created in Snowflake | `SHOW EXTERNAL ACCESS INTEGRATIONS;` |
-| 6 | EAI attached to Openflow runtime | Openflow UI → Runtime → External Access |
-
-Ref: https://docs.snowflake.com/en/user-guide/data-integration/openflow/setup-openflow-spcs-sf-allow-list
 
 ## Confidence Rating
 
@@ -64,5 +69,5 @@ Ref: https://docs.snowflake.com/en/user-guide/data-integration/openflow/setup-op
 | Snowflake destination setup | **100%** | Validated — all objects created and grants verified |
 | SQL Server Change Tracking | **95%** | Standard CT setup, well-documented by Microsoft |
 | Openflow incremental mode | **90%** | Per Snowflake docs — `Ingestion Type = incremental` bypasses snapshot |
-| EAI/Network connectivity | **85%** | Depends on EC2 security group + EAI config |
-| **Overall E2E** | **90%** | Main risk is network path from SPCS to EC2 |
+| Network (BYOC private) | **95%** | Same VPC, no public internet traversal |
+| **Overall E2E** | **92%** | Higher confidence with BYOC — no public IP dependency |
