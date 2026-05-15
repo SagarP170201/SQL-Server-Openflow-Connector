@@ -6,16 +6,13 @@
 --   - 64 vCPU, 256 GB RAM, 6 TB database
 --   - Port: 1433
 --
--- Networking Prerequisites:
---   1. EC2 Security Group: Allow inbound TCP 1433 from 0.0.0.0/0
---      (or restrict to Openflow SPCS egress IPs)
---   2. EC2 must have a public IP or Elastic IP (for SPCS reachability)
---   3. No NACLs blocking 1433 on the subnet
---   4. Windows Firewall on the EC2: port 1433 open
---   5. SQL Server Configuration Manager: TCP/IP enabled, listening on 1433
+-- Networking (BYOC — runtime in same VPC):
+--   1. EC2 Security Group: Allow inbound TCP 1433 from BYOC runtime subnet
+--   2. Windows Firewall on EC2: port 1433 open
+--   3. SQL Server Configuration Manager: TCP/IP enabled, listening on 1433
 --
 -- Connection string:
---   Server: <ec2-public-ip-or-dns>
+--   Server: <ec2-private-ip>
 --   Port: 1433
 -- =============================================================================
 
